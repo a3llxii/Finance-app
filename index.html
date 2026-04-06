@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0e0e14" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Finance IQ" />
+  <title>Finance IQ</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0e0e14;
+      --card: #13131c;
+      --border: #1e1e2a;
+      --surface: #1a1a26;
+      --green: #00C896;
+      --blue: #4A9FFF;
+      --red: #FF5C5C;
+      --orange: #FF7A00;
+      --text: #ffffff;
+      --muted: #888;
+      --dim: #444;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
+    #root { min-height: 100vh; }
+    button { font-family: 'DM Sans', sans-serif; cursor: pointer; border: none; background: none; }
+    button:active { opacity: 0.8; }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 4px; }
+
+    /* animations */
+    @keyframes fadeUp   { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeDown { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes spin     { to { transform: rotate(360deg); } }
+    @keyframes pop      { 0%{transform:scale(0.8);opacity:0} 60%{transform:scale(1.08)} 100%{transform:scale(1);opacity:1} }
+    @keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+    .fade-up   { animation: fadeUp   0.35s ease both; }
+    .fade-down { animation: fadeDown 0.3s ease both; }
+    .pop       { animation: pop      0.4s cubic-bezier(.34,1.56,.64,1) both; }
+
+    /* layout */
+    .screen { max-width: 480px; margin: 0 auto; padding: 28px 20px 48px; }
+
+    /* home */
+    .badge { display:inline-flex; align-items:center; gap:6px; background:#00C89618; color:var(--green); font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; padding:5px 12px; border-radius:20px; margin-bottom:20px; border:1px solid #00C89633; }
+    .title { font-family:'Syne',sans-serif; font-size:clamp(44px,12vw,60px); font-weight:800; line-height:1; margin-bottom:14px; letter-spacing:-2px; }
+    .title .accent { color:var(--green); }
+    .subtitle { color:var(--muted); font-size:15px; line-height:1.6; margin-bottom:32px; }
+    .section-label { font-size:10px; font-weight:700; letter-spacing:2.5px; color:#555; margin-bottom:10px; text-transform:uppercase; }
+
+    .topic-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:8px; }
+    .topic-btn  { display:flex; flex-direction:column; align-items:center; padding:14px 10px; border-radius:14px; border:1.5px solid #2a2a3a; background:#16161e; transition:all 0.18s; position:relative; }
+    .topic-btn.active { background: var(--active-bg); border-color: var(--active-color); }
+    .topic-btn .icon { font-size:24px; margin-bottom:6px; }
+    .topic-btn .name { font-size:11px; font-weight:600; color:#888; text-align:center; line-height:1.3; }
+    .topic-btn.active .name { color: var(--active-color); }
+    .topic-btn .check { position:absolute; top:8px; right:10px; font-size:13px; font-weight:800; }
+
+    .diff-row { display:flex; gap:8px; margin-bottom:8px; }
+    .diff-btn  { flex:1; padding:11px 0; border-radius:10px; background:#1e1e2a; color:#888; font-size:13px; font-weight:500; transition:all 0.18s; }
+    .diff-btn.active { background:var(--green); color:#000; font-weight:700; }
+
+    .start-btn { width:100%; padding:17px; background:var(--green); color:#000; font-weight:800; font-size:16px; border-radius:14px; margin-top:24px; letter-spacing:0.5px; font-family:'Syne',sans-serif; transition:opacity 0.2s; }
+    .start-btn:disabled { opacity:0.35; cursor:not-allowed; }
+    .hint { color:#555; font-size:12px; text-align:center; margin-top:8px; }
+
+    /* quiz header */
+    .quiz-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+    .back-btn    { color:var(--muted); font-size:14px; padding:6px 0; }
+    .score-chip  { background:var(--surface); padding:6px 16px; border-radius:20px; font-size:15px; }
+    .score-chip .val { color:var(--green); font-weight:700; }
+
+    .progress-track { height:4px; background:var(--border); border-radius:4px; overflow:hidden; margin-bottom:6px; }
+    .progress-fill  { height:100%; background:linear-gradient(90deg,var(--green),var(--blue)); border-radius:4px; transition:width 0.4s ease; }
+    .progress-label { font-size:11px; color:#555; text-align:right; margin-bottom:18px; }
+
+    /* card */
+    .card { background:var(--card); border-radius:20px; padding:24px; border:1px solid var(--border); min-height:300px; }
+    .center-col { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:260px; gap:12px; }
+    .spinner { width:36px; height:36px; border:3px solid var(--border); border-top:3px solid var(--green); border-radius:50%; animation:spin 0.8s linear infinite; }
+    .loading-text { color:var(--muted); font-size:13px; text-align:center; animation:pulse 1.5s ease infinite; }
+    .error-text  { color:var(--red); font-size:13px; text-align:center; line-height:1.6; }
+    .retry-btn   { background:var(--surface); color:#ccc; padding:10px 24px; border-radius:10px; font-size:14px; }
+
+    .tags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+    .topic-tag { font-size:11px; font-weight:700; padding:4px 11px; border-radius:20px; border:1px solid; }
+    .diff-tag  { font-size:11px; color:var(--muted); background:var(--surface); padding:4px 11px; border-radius:20px; }
+
+    .question-text { font-family:'Syne',sans-serif; font-size:17px; font-weight:700; color:#fff; line-height:1.55; margin-bottom:22px; }
+
+    .option-btn { display:flex; align-items:center; gap:12px; width:100%; padding:14px; border-radius:13px; border:1.5px solid var(--border); background:var(--surface); margin-bottom:10px; text-align:left; transition:all 0.15s; }
+    .option-btn:active { transform:scale(0.98); }
+    .opt-letter { width:28px; height:28px; border-radius:8px; background:#ffffff0f; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex-shrink:0; }
+    .opt-text { font-size:14px; color:#ccc; flex:1; line-height:1.4; }
+    .opt-icon { margin-left:auto; font-size:16px; flex-shrink:0; }
+
+    .explanation { margin-top:20px; padding:16px; background:var(--bg); border-radius:13px; border:1px solid var(--border); animation:fadeUp 0.3s ease; }
+    .exp-label { font-size:10px; color:var(--muted); margin-bottom:6px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; }
+    .exp-text  { font-size:14px; color:#bbb; line-height:1.65; }
+    .next-btn  { width:100%; padding:14px; background:var(--green); color:#000; font-weight:800; font-size:15px; border-radius:13px; margin-top:16px; font-family:'Syne',sans-serif; }
+
+    /* streak */
+    .streak-banner { position:fixed; top:24px; left:50%; transform:translateX(-50%); background:var(--orange); color:#fff; font-weight:800; font-size:18px; padding:11px 28px; border-radius:30px; z-index:100; box-shadow:0 4px 24px #FF7A0055; animation:pop 0.4s cubic-bezier(.34,1.56,.64,1); white-space:nowrap; }
+
+    /* summary */
+    .grade-circle { width:148px; height:148px; border-radius:50%; background:var(--card); border:3px solid var(--green); display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 12px; gap:2px; box-shadow:0 0 40px #00C89622; }
+    .grade-pct   { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; color:var(--green); }
+    .grade-score { font-size:12px; color:var(--muted); }
+    .grade-label { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; text-align:center; margin-bottom:4px; }
+    .streak-sub  { color:var(--muted); text-align:center; font-size:13px; margin-bottom:24px; }
+
+    .history-list { display:flex; flex-direction:column; gap:10px; margin-bottom:24px; }
+    .history-item { background:var(--card); border-radius:12px; padding:13px 14px; border-left:3px solid; }
+    .history-topic { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+    .history-q     { font-size:13px; color:#ccc; margin:5px 0 4px; line-height:1.4; }
+    .history-result{ font-size:12px; }
+
+    /* safe area for iPhone */
+    @supports (padding-top: env(safe-area-inset-top)) {
+      .screen { padding-top: max(28px, env(safe-area-inset-top)); padding-bottom: max(48px, env(safe-area-inset-bottom)); }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+
+// 🔑 Replace with your key from console.anthropic.com
+const API_KEY = "YOUR_ANTHROPIC_API_KEY_HERE";
+
+const TOPICS = [
+  { id:"ch9",  label:"Capital Budgeting",  sub:"Ch9",  icon:"📐", color:"#00C896" },
+  { id:"ch10", label:"Project Cash Flows", sub:"Ch10", icon:"💵", color:"#4A9FFF" },
+  { id:"ch12", label:"Risk & Return",       sub:"Ch12", icon:"📈", color:"#FF7A5C" },
+  { id:"ch13", label:"Portfolio Theory",    sub:"Ch13", icon:"🎯", color:"#B57BFF" },
+  { id:"ch14", label:"Cost of Capital",     sub:"Ch14", icon:"⚖️", color:"#FFD166" },
+  { id:"ch16", label:"Capital Structure",   sub:"Ch16", icon:"🏛️", color:"#EF476F" },
+];
+
+const DIFFICULTIES = ["Beginner", "Intermediate", "Advanced"];
+
+const LECTURE_NOTES = {
+  ch9: `Chapter 9: Net Present Value and Other Investment Rules
+- NPV = difference between market value of a project and its cost
+- Decision Rule: Accept if NPV > 0; a positive NPV adds value to the firm
+- NPV accounts for time value of money, risk, and value creation — it is the primary decision criterion
+- Payback Rule: how long to recover initial investment in nominal terms. Ignores time value of money, requires arbitrary cutoff, ignores cash flows beyond cutoff. Advantages: easy to understand, biased toward liquidity.
+- Discounted Payback: uses discounted cash flows, still ignores cash flows after cutoff
+- Average Accounting Return (AAR): average net income / average book value. Ignores time value of money, uses accounting numbers not cash flows
+- Internal Rate of Return (IRR): discount rate that makes NPV = 0. Accept if IRR > required return. Problems: non-conventional cash flows can cause multiple IRRs, mutually exclusive projects may rank incorrectly
+- Profitability Index (PI) = PV of future cash flows / initial investment. PI > 1 means accept. Useful for capital rationing.
+- Capital Rationing: firm cannot take all positive NPV projects due to limited funds. Use PI to rank projects.`,
+
+  ch10: `Chapter 10: Making Capital Investment Decisions
+- Relevant cash flows = incremental cash flows (only occur if project is accepted)
+- Stand-alone principle: analyze each project in isolation using incremental cash flows
+- Sunk costs: already incurred, NOT relevant (e.g. past R&D fees)
+- Opportunity costs: costs of lost options, ARE relevant (e.g. land you already own)
+- Side effects: erosion/cannibalism (negative) or synergies (positive)
+- Net Working Capital (NWC): must include changes in NWC; usually recovered at project end
+- Financing costs: NOT included in cash flows (captured in discount rate)
+- Capital Cost Allowance (CCA): Canadian tax depreciation system, generates tax shields
+- Tax shield on CCA = (C × d × T) / (d + k) × (2+k)/(2+k) — reduces taxes owed
+- Operating Cash Flow (OCF) = EBIT + Depreciation − Taxes = Net Income + Depreciation
+- Alternative OCF formulas: bottom-up, top-down, tax shield approach
+- Equivalent Annual Cost (EAC): useful for comparing projects with unequal lives
+- Bid price: minimum price to break even on a project (NPV = 0)`,
+
+  ch12: `Chapter 12: Some Lessons from Capital Market History
+- Total dollar return = dividends received + capital gain (or loss)
+- Dividend yield = dividend / beginning price
+- Capital gains yield = (ending price − beginning price) / beginning price
+- Total percentage return = dividend yield + capital gains yield
+- Historical returns (highest to lowest): small stocks > large stocks > long-term bonds > T-bills
+- Risk premium = excess return earned above risk-free rate
+- Variance measures volatility: average of squared deviations from mean
+- Standard deviation = square root of variance (same units as return)
+- Normal distribution: 68% of returns within 1 std dev, 95% within 2 std devs
+- Risk-return trade-off: greater potential reward comes with greater risk
+- Market efficiency: prices reflect all available information
+- Three forms: weak (past prices), semi-strong (public info), strong (all info)
+- Implications: you cannot consistently beat the market using public information`,
+
+  ch13: `Chapter 13: Return, Risk, and the Security Market Line
+- Expected return = weighted average of possible returns using probabilities
+- Variance (population formula): weighted average of squared deviations
+- Portfolio expected return = weighted average of individual expected returns
+- Portfolio variance depends on correlations between assets
+- Diversification reduces risk when assets are not perfectly positively correlated
+- Systematic risk (market risk): affects all firms, cannot be diversified away (e.g. recession, interest rates)
+- Unsystematic risk (firm-specific): can be eliminated through diversification (e.g. labour strike, product recall)
+- Total risk = systematic risk + unsystematic risk
+- Principle: market only rewards systematic risk
+- Beta (β): measures systematic risk relative to the market. Market beta = 1.0
+- β > 1: more volatile than market; β < 1: less volatile
+- Security Market Line (SML): E(R) = Rf + β × [E(Rm) − Rf]
+- Market risk premium = E(Rm) − Rf
+- CAPM: required return based on beta and market risk premium
+- Arbitrage Pricing Theory (APT): multiple factors drive expected returns`,
+
+  ch14: `Chapter 14: Cost of Capital
+- Cost of capital = required return = appropriate discount rate based on risk
+- Cost of Equity (RE) — two methods:
+  1. Dividend Growth Model: RE = D1/P0 + g
+  2. CAPM/SML: RE = Rf + β × (Rm − Rf)
+- D1 = D0 × (1 + g); g estimated from historical growth or analyst forecasts
+- Cost of Debt (RD): yield to maturity on existing debt, adjusted for taxes: RD × (1 − T)
+- Cost of Preferred Stock: RP = D / P0 (no tax adjustment since dividends not tax deductible)
+- WACC = (E/V) × RE + (D/V) × RD × (1 − T) + (P/V) × RP
+- V = E + D + P (total market value of firm)
+- Weights must use MARKET values, not book values
+- Divisional cost of capital: use SML and pure play approach for different risk divisions
+- Flotation costs: increase the effective cost of raising new capital
+- Adjusted cost with flotation: f = weighted average flotation cost; use (1 − f) as denominator
+- Pitfall of single WACC: inappropriate for projects with different risk levels than the firm
+- Loblaw WACC case: real-world Canadian application of WACC calculation`,
+
+  ch16: `Chapter 16: Financial Leverage and Capital Structure Policy
+- Capital restructuring: changing leverage without changing assets
+- Increase leverage: issue debt, repurchase shares
+- Decrease leverage: issue shares, retire debt
+- Goal: choose capital structure that maximizes firm value / minimizes WACC
+- Financial leverage amplifies EPS and ROE variability
+- M&M Proposition I (no taxes): firm value is independent of capital structure (V_L = V_U)
+- M&M Proposition II (no taxes): RE = RU + (D/E) × (RU − RD); cost of equity rises with leverage
+- WACC remains constant under M&M with no taxes
+- M&M Proposition I (with corporate taxes): V_L = V_U + T×D (interest tax shield adds value)
+- Optimal capital structure with taxes: 100% debt (unrealistic)
+- Bankruptcy costs: direct (legal/admin fees) and indirect (lost customers, suppliers, employees)
+- Static trade-off theory: balance tax shield benefits against bankruptcy costs
+- Optimal D/E ratio: where marginal tax benefit = marginal bankruptcy cost
+- Pecking order theory: firms prefer internal financing > debt > equity (due to asymmetric information)
+- Financial distress: firm struggles to meet debt obligations; leads to underinvestment and asset substitution problems
+- Observed capital structures vary widely by industry based on asset tangibility, profitability, and growth`,
+};
+
+const SYSTEM_PROMPT = `You are a finance professor creating exam-style quiz questions based ONLY on the provided lecture notes from the Ross "Fundamentals of Corporate Finance" textbook (Canadian edition).
+
+Generate a multiple-choice question at the specified difficulty level using ONLY concepts, formulas, examples, and terminology from the provided notes.
+
+Difficulty guide:
+- Beginner: definitions, basic concepts, true/false style
+- Intermediate: application, calculations, comparisons
+- Advanced: multi-step problems, edge cases, conceptual traps
+
+Return ONLY a JSON object in this exact format (no markdown, no extra text):
+{
+  "question": "the question text",
+  "options": ["A) option1", "B) option2", "C) option3", "D) option4"],
+  "correct": "A",
+  "explanation": "brief explanation referencing the lecture concept (2-3 sentences)"
+}`;
+
+// ─── APP ──────────────────────────────────────────────────────────────────────
+
+function App() {
+  const [screen, setScreen]                 = useState("home");
+  const [selectedTopics, setSelectedTopics] = useState([]);
+  const [difficulty, setDifficulty]         = useState("Beginner");
+  const [currentQ, setCurrentQ]             = useState(null);
+  const [loading, setLoading]               = useState(false);
+  const [selected, setSelected]             = useState(null);
+  const [revealed, setRevealed]             = useState(false);
+  const [score, setScore]                   = useState(0);
+  const [questionCount, setQuestionCount]   = useState(0);
+  const [history, setHistory]               = useState([]);
+  const [error, setError]                   = useState(null);
+  const [streak, setStreak]                 = useState(0);
+  const [bestStreak, setBestStreak]         = useState(0);
+  const [showStreak, setShowStreak]         = useState(false);
+  const streakTimer    = useRef(null);
+  const askedQuestions = useRef([]);
+
+  const toggleTopic = (id) =>
+    setSelectedTopics(p => p.includes(id) ? p.filter(t => t !== id) : [...p, id]);
+
+  const startQuiz = () => {
+    if (!selectedTopics.length) return;
+    setScore(0); setQuestionCount(0); setHistory([]);
+    setStreak(0); setBestStreak(0);
+    askedQuestions.current = [];
+    setScreen("quiz");
+    fetchQuestion();
+  };
+
+  const randomTopicId = () => {
+    const pool = selectedTopics.length ? selectedTopics : TOPICS.map(t => t.id);
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+
+  const fetchQuestion = async () => {
+    setLoading(true); setSelected(null);
+    setRevealed(false); setError(null); setCurrentQ(null);
+    const topicId  = randomTopicId();
+    const topicObj = TOPICS.find(t => t.id === topicId);
+    const notes    = LECTURE_NOTES[topicId];
+    try {
+      if (!API_KEY || API_KEY === "YOUR_ANTHROPIC_API_KEY_HERE")
+        throw new Error("API key not set. Open index.html and replace YOUR_ANTHROPIC_API_KEY_HERE on line 1 of the script.");
+      const prev = askedQuestions.current
+        .filter(q => q.topicId === topicId)
+        .map(q => `- ${q.question}`).join("\n");
+      const avoidSection = prev
+        ? `\n\nQuestions already asked (DO NOT repeat or ask anything similar):\n${prev}`
+        : "";
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: SYSTEM_PROMPT,
+          messages: [{
+            role: "user",
+            content: `Topic: ${topicObj.label} (${topicObj.sub})\nDifficulty: ${difficulty}\n\nLecture Notes:\n${notes}${avoidSection}\n\nGenerate one ${difficulty} level question. Make it distinctly different from any already-asked questions.`
+          }],
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(`${data.error.type}: ${data.error.message}`);
+      const raw = data.content?.[0]?.text || "";
+      if (!raw) throw new Error("Empty response from API.");
+      const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
+      askedQuestions.current.push({ question: parsed.question, topicId });
+      setCurrentQ({ ...parsed, topicId, topicLabel: topicObj.label, topicSub: topicObj.sub });
+    } catch(e) {
+      setError(e?.message || "Unknown error.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAnswer = (letter) => {
+    if (revealed) return;
+    setSelected(letter); setRevealed(true);
+    const correct = letter === currentQ.correct;
+    const ns = correct ? streak + 1 : 0;
+    setBestStreak(b => Math.max(b, ns)); setStreak(ns);
+    if (ns > 1) {
+      setShowStreak(true);
+      clearTimeout(streakTimer.current);
+      streakTimer.current = setTimeout(() => setShowStreak(false), 1800);
+    }
+    if (correct) setScore(s => s + 1);
+    setQuestionCount(q => q + 1);
+    setHistory(h => [...h, { question: currentQ.question, correct, topicId: currentQ.topicId, topicLabel: currentQ.topicLabel, selected: letter, answer: currentQ.correct }]);
+  };
+
+  const next = () => questionCount >= 10 ? setScreen("summary") : fetchQuestion();
+  const tc   = id => TOPICS.find(t => t.id === id)?.color || "#00C896";
+  const ti   = id => TOPICS.find(t => t.id === id)?.icon  || "📚";
+
+  // ── HOME ──────────────────────────────────────────────────────────────────
+  if (screen === "home") return (
+    <div className="screen fade-up">
+      <div className="badge">📊 Ross Textbook · AI Quiz</div>
+      <h1 className="title">Finance<br/><span className="accent">IQ</span></h1>
+      <p className="subtitle">Quiz yourself on your actual lecture material — not generic questions.</p>
+
+      <p className="section-label">Select Chapters</p>
+      <div className="topic-grid">
+        {TOPICS.map(t => {
+          const active = selectedTopics.includes(t.id);
+          return (
+            <button key={t.id} onClick={() => toggleTopic(t.id)}
+              className={`topic-btn ${active ? "active" : ""}`}
+              style={{ "--active-color": t.color, "--active-bg": t.color + "22" }}>
+              <span className="icon">{t.icon}</span>
+              <span className="name">{t.label}<br/><span style={{opacity:0.6}}>{t.sub}</span></span>
+              {active && <span className="check" style={{color:t.color}}>✓</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="section-label" style={{marginTop:20}}>Difficulty</p>
+      <div className="diff-row">
+        {DIFFICULTIES.map(d => (
+          <button key={d} onClick={() => setDifficulty(d)}
+            className={`diff-btn ${difficulty === d ? "active" : ""}`}>{d}</button>
+        ))}
+      </div>
+
+      <button className="start-btn" onClick={startQuiz} disabled={!selectedTopics.length}>
+        Start Quiz →
+      </button>
+      {!selectedTopics.length && <p className="hint">Select at least one chapter</p>}
+    </div>
+  );
+
+  // ── SUMMARY ───────────────────────────────────────────────────────────────
+  if (screen === "summary") {
+    const pct   = Math.round((score / questionCount) * 100);
+    const grade = pct >= 90 ? "🏆 Exam Ready" : pct >= 70 ? "🎯 Solid" : pct >= 50 ? "📚 Keep Studying" : "💡 Review Notes";
+    return (
+      <div className="screen fade-up">
+        <div className="grade-circle pop">
+          <span style={{fontSize:34}}>{grade.split(" ")[0]}</span>
+          <span className="grade-pct">{pct}%</span>
+          <span className="grade-score">{score}/{questionCount} correct</span>
+        </div>
+        <h2 className="grade-label">{grade.split(" ").slice(1).join(" ")}</h2>
+        <p className="streak-sub">Best streak: {bestStreak} 🔥</p>
+        <div className="history-list">
+          {history.map((h, i) => (
+            <div key={i} className="history-item" style={{borderLeftColor: h.correct ? "#00C896" : "#FF5C5C"}}>
+              <p className="history-topic" style={{color: tc(h.topicId)}}>{ti(h.topicId)} {h.topicLabel}</p>
+              <p className="history-q">{h.question}</p>
+              <p className="history-result" style={{color: h.correct ? "#00C896" : "#FF5C5C"}}>
+                {h.correct ? "✓ Correct" : `✗ You chose ${h.selected}, answer: ${h.answer}`}
+              </p>
+            </div>
+          ))}
+        </div>
+        <button className="start-btn" onClick={() => setScreen("home")}>Play Again</button>
+      </div>
+    );
+  }
+
+  // ── QUIZ ──────────────────────────────────────────────────────────────────
+  const progress = (questionCount / 10) * 100;
+  return (
+    <div className="screen">
+      {showStreak && <div className="streak-banner">🔥 {streak} Streak!</div>}
+
+      <div className="quiz-header">
+        <button className="back-btn" onClick={() => setScreen("home")}>← Back</button>
+        <div className="score-chip"><span className="val">{score}</span> / {questionCount}</div>
+      </div>
+
+      <div className="progress-track">
+        <div className="progress-fill" style={{width:`${progress}%`}} />
+      </div>
+      <p className="progress-label">Question {questionCount + 1} of 10</p>
+
+      <div className="card">
+        {loading && (
+          <div className="center-col">
+            <div className="spinner" />
+            <p className="loading-text">Generating question from your notes…</p>
+          </div>
+        )}
+        {error && (
+          <div className="center-col">
+            <p className="error-text">⚠️ {error}</p>
+            <button className="retry-btn" onClick={fetchQuestion}>Retry</button>
+          </div>
+        )}
+        {!loading && !error && currentQ && (
+          <div className="fade-up">
+            <div className="tags">
+              <span className="topic-tag" style={{color:tc(currentQ.topicId), borderColor:tc(currentQ.topicId)+"44", background:tc(currentQ.topicId)+"15"}}>
+                {ti(currentQ.topicId)} {currentQ.topicLabel}
+              </span>
+              <span className="diff-tag">{difficulty}</span>
+            </div>
+            <p className="question-text">{currentQ.question}</p>
+            {currentQ.options.map(opt => {
+              const letter = opt[0];
+              const isSel  = selected === letter;
+              const isCorr = currentQ.correct === letter;
+              let bg="#1a1a26", border="var(--border)", color="#ccc";
+              if (revealed) {
+                if (isCorr)      { bg="#00C89618"; border="#00C896"; color="#00C896"; }
+                else if (isSel)  { bg="#FF5C5C18"; border="#FF5C5C"; color="#FF5C5C"; }
+                else             { color="var(--dim)"; }
+              } else if (isSel)  { bg="#4A9FFF18"; border="#4A9FFF"; color="#4A9FFF"; }
+              return (
+                <button key={letter} className="option-btn"
+                  style={{background:bg, borderColor:border}}
+                  onClick={() => handleAnswer(letter)}>
+                  <span className="opt-letter" style={{color}}>{letter}</span>
+                  <span className="opt-text" style={{color}}>{opt.slice(3)}</span>
+                  {revealed && isCorr          && <span className="opt-icon" style={{color:"#00C896"}}>✓</span>}
+                  {revealed && isSel && !isCorr && <span className="opt-icon" style={{color:"#FF5C5C"}}>✗</span>}
+                </button>
+              );
+            })}
+            {revealed && (
+              <div className="explanation">
+                <p className="exp-label">Explanation</p>
+                <p className="exp-text">{currentQ.explanation}</p>
+                <button className="next-btn" onClick={next}>
+                  {questionCount >= 10 ? "See Results" : "Next Question →"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
